@@ -21,7 +21,7 @@ Find and replace all on all files (CMD+SHIFT+F):
 Install the module to your Nuxt application with one command:
 
 ```bash
-npx nuxi module add nuxt-form
+npx nuxi module add @louislschvn/nuxt-form
 ```
 
 That's it! You can now use Nuxt Form in your Nuxt app ✨
