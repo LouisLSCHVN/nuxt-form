@@ -4,28 +4,17 @@ Get your module up and running quickly.
 Find and replace all on all files (CMD+SHIFT+F):
 - Name: Nuxt Form
 - Package name: nuxt-form
-- Description: My new Nuxt module
+- Description: Add a useForm composable to Nuxt, and a createValidationError function to validate forms in Nitro
 -->
 
 # Nuxt Form
 
-[![npm version][npm-version-src]][npm-version-href]
-[![npm downloads][npm-downloads-src]][npm-downloads-href]
-[![License][license-src]][license-href]
-[![Nuxt][nuxt-src]][nuxt-href]
-
-My new Nuxt module for doing amazing things.
-
-- [✨ &nbsp;Release Notes](/CHANGELOG.md)
-<!-- - [🏀 Online playground](https://stackblitz.com/github/your-org/nuxt-form?file=playground%2Fapp.vue) -->
-<!-- - [📖 &nbsp;Documentation](https://example.com) -->
-
 ## Features
 
 <!-- Highlight some of the features your module provide here -->
-- ⛰ &nbsp;Foo
-- 🚠 &nbsp;Bar
-- 🌲 &nbsp;Baz
+- ⛰ &nbsp;Aim to add useForm composable in Nuxt <em>(inspired by Inertia)</em>
+- 🚠 &nbsp;Find a demo in the <code><a href='https://github.com/LouisLSCHVN/nuxt-form/blob/main/playground/app.vue'>playground/app.vue</a></code> file
+- 🌲 &nbsp;The form will be submitted to <code><a href='https://github.com/LouisLSCHVN/nuxt-form/blob/main/playground/server/api/endpoint.post.ts'>/api/endpoint</a></code>
 
 ## Quick Setup
 
