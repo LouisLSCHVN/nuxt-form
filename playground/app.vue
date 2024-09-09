@@ -1,4 +1,19 @@
 <template>
+  <h1>Nuxt Form</h1>
+  <ul>
+    <li>
+      Aim to add useForm composable in Nuxt <em>(inspired by Inertia)</em>
+    </li>
+    <li>
+      Find a demo in the <code>playground/app.vue</code> file
+    </li>
+    <li>
+      The form will be submitted to <code>/api/endpoint</code>
+    </li>
+    <li>
+      The validation file is in <code>playground/server/validators/index</code>
+    </li>
+  </ul>
   <form @submit.prevent="submit">
     <input
       v-model="form.email"

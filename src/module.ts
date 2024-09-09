@@ -1,12 +1,12 @@
-import { defineNuxtModule, addPlugin, createResolver, addImports, addServerImports, addServerImportsDir, addImportsDir } from '@nuxt/kit'
+import { defineNuxtModule, createResolver, addServerImportsDir, addImportsDir } from '@nuxt/kit'
 
 // Module options TypeScript interface definition
-export interface ModuleOptions {}
+// export interface ModuleOptions {}
 
-export default defineNuxtModule<ModuleOptions>({
+export default defineNuxtModule({
   meta: {
     name: 'nuxt-form',
-    configKey: 'useForm',
+    configKey: 'form',
   },
   // Default configuration options of the Nuxt module
   defaults: {},
