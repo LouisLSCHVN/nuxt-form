@@ -1,8 +1,11 @@
 {
   "name": "@louislschvn/nuxt-form",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Add a useForm composable to Nuxt, and a createValidationError function to validate forms in Nitro",
-  "repository": "LouisLSCHVN/nuxt-form",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LouisLSCHVN/nuxt-form.git"
+  },
   "license": "MIT",
   "type": "module",
   "exports": {
