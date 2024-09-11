@@ -1,12 +1,3 @@
-<!--
-Get your module up and running quickly.
-
-Find and replace all on all files (CMD+SHIFT+F):
-- Name: Nuxt Form
-- Package name: nuxt-form
-- Description: My new Nuxt module
--->
-
 # Nuxt Form
 
 [![npm version][npm-version-src]][npm-version-href]
@@ -22,10 +13,10 @@ My new Nuxt module for doing amazing things.
 
 ## Features
 
-<!-- Highlight some of the features your module provide here -->
-- ⛰ &nbsp;Foo
-- 🚠 &nbsp;Bar
-- 🌲 &nbsp;Baz
+- ⛰ &nbsp;Form handling similar to Inertia/Vue's useForm
+- 🚠 &nbsp;Backend validation with Zod
+- 🌲 &nbsp;Frontend form state management
+- 🏔 &nbsp;Easy error handling and validation
 
 ## Quick Setup
 
@@ -37,6 +28,73 @@ npx nuxi module add nuxt-form
 
 That's it! You can now use Nuxt Form in your Nuxt app ✨
 
+## Documentation
+
+### Backend Usage
+
+Nuxt Form provides a utility function `createValidationError` for easy backend validation:
+
+```javascript
+import { createUserValidator } from '../validators'
+
+export default defineEventHandler(async (event) => {
+  const result = await readValidatedBody(event, createUserValidator.safeParse)
+  if (!result.success) {
+    return createValidationError(result.error)
+  }
+  // Store in database..
+  return { statusCode: 201, message: 'success' }
+})
+```
+
+### Frontend Usage
+
+On the frontend, you can use the `useForm` composable to handle form state and submission:
+
+```vue
+<template>
+  <form @submit.prevent="submit">
+    <input v-model="form.email" type="text" placeholder="Enter your email">
+    <p v-if="form.errors.email">{{ form.errors.email }}</p>
+
+    <input v-model="form.password" type="password" placeholder="Enter your password">
+    <p v-if="form.errors.password">{{ form.errors.password }}</p>
+
+    <button type="submit" :disabled="form.processing">Submit</button>
+  </form>
+  <p v-if="success.state">Success!</p>
+</template>
+
+<script setup>
+const form = useForm({
+  email: '',
+  password: '',
+})
+
+const success = ref({ state: false, message: '' })
+
+const submit = async () => {
+  form.post('/api/endpoint', {
+    onError: (err) => {
+      form.reset('password')
+      console.warn(err)
+    },
+    onSuccess: (res) => {
+      success.value.state = true
+      success.value.message = res.message
+      form.reset()
+    },
+  })
+}
+</script>
+```
+
+This setup provides a seamless integration between frontend form handling and backend validation, similar to the functionality offered by Inertia.js and Vue's useForm, but tailored for Nuxt applications.
+
+## Todo
+
+- [ ] Handle file uploads
+- [ ] Make success state natively available in the composable
 
 ## Contribution
 
@@ -68,7 +126,6 @@ That's it! You can now use Nuxt Form in your Nuxt app ✨
   ```
 
 </details>
-
 
 <!-- Badges -->
 [npm-version-src]: https://img.shields.io/npm/v/nuxt-form/latest.svg?style=flat&colorA=020420&colorB=00DC82
