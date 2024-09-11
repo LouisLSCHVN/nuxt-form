@@ -1,31 +1,100 @@
-<!--
-Get your module up and running quickly.
-
-Find and replace all on all files (CMD+SHIFT+F):
-- Name: Nuxt Form
-- Package name: nuxt-form
-- Description: Add a useForm composable to Nuxt, and a createValidationError function to validate forms in Nitro
--->
-
 # Nuxt Form
+
+[![npm version][npm-version-src]][npm-version-href]
+[![npm downloads][npm-downloads-src]][npm-downloads-href]
+[![License][license-src]][license-href]
+[![Nuxt][nuxt-src]][nuxt-href]
+
+My new Nuxt module for doing amazing things.
+
+- [✨ &nbsp;Release Notes](/CHANGELOG.md)
+<!-- - [🏀 Online playground](https://stackblitz.com/github/your-org/nuxt-form?file=playground%2Fapp.vue) -->
+<!-- - [📖 &nbsp;Documentation](https://example.com) -->
 
 ## Features
 
-<!-- Highlight some of the features your module provide here -->
-- ⛰ &nbsp;Aim to add useForm composable in Nuxt <em>(inspired by Inertia)</em>
-- 🚠 &nbsp;Find a demo in the <code><a href='https://github.com/LouisLSCHVN/nuxt-form/blob/main/playground/app.vue'>playground/app.vue</a></code> file
-- 🌲 &nbsp;The form will be submitted to <code><a href='https://github.com/LouisLSCHVN/nuxt-form/blob/main/playground/server/api/endpoint.post.ts'>/api/endpoint</a></code>
+- ⛰ &nbsp;Form handling similar to Inertia/Vue's useForm
+- 🚠 &nbsp;Backend validation with Zod
+- 🌲 &nbsp;Frontend form state management
+- 🏔 &nbsp;Easy error handling and validation
 
 ## Quick Setup
 
 Install the module to your Nuxt application with one command:
 
 ```bash
-npx nuxi module add @louislschvn/nuxt-form
+npx nuxi module add nuxt-form
 ```
 
 That's it! You can now use Nuxt Form in your Nuxt app ✨
 
+## Documentation
+
+### Backend Usage
+
+Nuxt Form provides a utility function `createValidationError` for easy backend validation:
+
+```javascript
+import { createUserValidator } from '../validators'
+
+export default defineEventHandler(async (event) => {
+  const result = await readValidatedBody(event, createUserValidator.safeParse)
+  if (!result.success) {
+    return createValidationError(result.error)
+  }
+  // Store in database..
+  return { statusCode: 201, message: 'success' }
+})
+```
+
+### Frontend Usage
+
+On the frontend, you can use the `useForm` composable to handle form state and submission:
+
+```vue
+<template>
+  <form @submit.prevent="submit">
+    <input v-model="form.email" type="text" placeholder="Enter your email">
+    <p v-if="form.errors.email">{{ form.errors.email }}</p>
+
+    <input v-model="form.password" type="password" placeholder="Enter your password">
+    <p v-if="form.errors.password">{{ form.errors.password }}</p>
+
+    <button type="submit" :disabled="form.processing">Submit</button>
+  </form>
+  <p v-if="success.state">Success!</p>
+</template>
+
+<script setup>
+const form = useForm({
+  email: '',
+  password: '',
+})
+
+const success = ref({ state: false, message: '' })
+
+const submit = async () => {
+  form.post('/api/endpoint', {
+    onError: (err) => {
+      form.reset('password')
+      console.warn(err)
+    },
+    onSuccess: (res) => {
+      success.value.state = true
+      success.value.message = res.message
+      form.reset()
+    },
+  })
+}
+</script>
+```
+
+This setup provides a seamless integration between frontend form handling and backend validation, similar to the functionality offered by Inertia.js and Vue's useForm, but tailored for Nuxt applications.
+
+## Todo
+
+- [ ] Handle file uploads
+- [ ] Make success state natively available in the composable
 
 ## Contribution
 
@@ -57,7 +126,6 @@ That's it! You can now use Nuxt Form in your Nuxt app ✨
   ```
 
 </details>
-
 
 <!-- Badges -->
 [npm-version-src]: https://img.shields.io/npm/v/nuxt-form/latest.svg?style=flat&colorA=020420&colorB=00DC82
