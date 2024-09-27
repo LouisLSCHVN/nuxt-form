@@ -17,6 +17,8 @@ export const useForm = <T extends Record<string, unknown>>(_data: T) => {
   const originalData = { ..._data }
   const errors = reactive<Record<string, string>>({})
   const processing = ref(false)
+  const success = ref(false)
+  const progress = ref(null)
 
   const setError = (field: keyof T, message: string) => {
     errors[field as string] = message
@@ -47,17 +49,45 @@ export const useForm = <T extends Record<string, unknown>>(_data: T) => {
     })
   }
 
+  const hasFile = ref(false)
+  watch(
+    data,
+    (newValue) => {
+      hasFile.value = Object.keys(newValue).some(
+        key => newValue[key] instanceof File || newValue[key] instanceof Blob,
+      )
+    },
+    { deep: true },
+  )
+
+  const appendFormData = (dataToAppend) => {
+    Object.keys(data.value).forEach((key) => {
+      const value = data.value[key]
+      if (value instanceof File || value instanceof Blob) {
+        (dataToAppend as FormData).append(key, value)
+      }
+      else {
+        (dataToAppend as FormData).append(key, String(value))
+      }
+    })
+  }
+
   const submit = async (method: HTTPMethod, url: string, options: FormOptions<T>) => {
     try {
+      const requestData = hasFile.value ? new FormData() : data.value
+      console.log('hasFile', hasFile.value)
+      if (hasFile.value) appendFormData(requestData)
+      console.log('Submitting data:', requestData)
       resetErrors()
       processing.value = true
       const res = await $fetch(url, {
         method,
-        body: method !== 'GET' ? data.value : undefined,
-        params: method === 'GET' ? data.value : undefined,
+        body: method !== 'GET' ? requestData : undefined,
+        params: method === 'GET' ? requestData : undefined,
       })
       processing.value = false
       options.onSuccess?.(res as T)
+      success.value = true
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     catch (err: any) {
@@ -91,11 +121,13 @@ export const useForm = <T extends Record<string, unknown>>(_data: T) => {
     }
   }
 
-  const form = reactive({
+  return reactive({
     ...toRefs(data.value),
     value: data,
     errors,
     processing,
+    success,
+    progress,
     reset,
     resetErrors,
     setError,
@@ -107,6 +139,4 @@ export const useForm = <T extends Record<string, unknown>>(_data: T) => {
     destroy,
     transform,
   })
-
-  return form
 }

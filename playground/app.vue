@@ -34,6 +34,10 @@
     <p v-if="form.errors.password">
       {{ form.errors.password }}
     </p>
+    <input
+      type="file"
+      @change="form.avatar = $event.target.files[0]"
+    >
     <button
       type="submit"
       :disabled="form.proccessing"
@@ -41,7 +45,7 @@
       Submit
     </button>
   </form>
-  <p v-if="success.state">
+  <p v-if="form.success">
     Success!
   </p>
 </template>
@@ -50,23 +54,21 @@
 const form = useForm({
   email: '',
   password: '',
-})
-
-const success = ref({
-  state: false,
-  message: '',
+  avatar: '',
 })
 
 const submit = async () => {
-  form.post('/api/endpoint', {
+  await form.post('/api/endpoint', {
     onError: (err) => {
       form.reset('password')
       console.warn(err)
     },
     onSuccess: (res) => {
-      success.value.state = true
-      success.value.message = res.message
       form.reset()
+      console.log(res)
+    },
+    onFinish: () => {
+      console.log('END')
     },
   })
 }
