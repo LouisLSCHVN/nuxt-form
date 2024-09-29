@@ -1,3 +1,8 @@
+/**
+ * TODO: need to keep the filename somewhere, like avatar:
+ *            { filename 'louis.png', content: Buffer or String }
+ */
+
 export async function readValidatedFormData<
   T,
   Event extends H3Event = H3Event,
@@ -20,6 +25,6 @@ export async function readValidatedFormData<
   const validated = validate(formDataObj)
 
   return validated.success
-    ? { success: true, data: validated.data }
+    ? { success: true, data: formData }
     : { success: false, error: validated.error }
 }
