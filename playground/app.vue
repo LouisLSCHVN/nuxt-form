@@ -48,7 +48,7 @@
 
     <button
       type="submit"
-      :disabled="form.proccessing"
+      :disabled="form.processing"
     >
       Submit
     </button>
