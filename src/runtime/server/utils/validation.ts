@@ -1,17 +1,16 @@
-import type {ZodError, ZodIssue} from 'zod'
-import {createError} from '#imports'
+import { createError } from 'h3'
 
 export interface ValidationError {
   field: string
   message: string
 }
 
-export function createValidationError(err: ZodError): Error {
+export function createValidationError(err: unknown): Error {
   console.log(err)
   if (!err) {
-    return
+    return createError({ statusCode: 500, message: 'Something went wrong' })
   }
-  const errors: ValidationError[] = err.errors.map((err: ZodIssue) => ({
+  const errors: ValidationError[] = err.errors.map((err: ValidationError) => ({
     field: err.path.join('.'),
     message: err.message,
   }))

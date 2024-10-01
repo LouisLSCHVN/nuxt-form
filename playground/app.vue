@@ -38,6 +38,14 @@
       type="file"
       @change="form.avatar = $event.target.files[0]"
     >
+    <progress
+      v-if="form.progress"
+      :value="form.progress"
+      max="100"
+    >
+      {{ form.progress.percentage }}%
+    </progress>
+
     <button
       type="submit"
       :disabled="form.proccessing"
@@ -54,11 +62,11 @@
 const form = useForm({
   email: '',
   password: '',
-  avatar: '',
+  avatar: null | File,
 })
 
 const submit = async () => {
-  await form.post('/api/endpoint', {
+  form.post('/api/endpoint', {
     onError: (err) => {
       form.reset('password')
       console.warn(err)

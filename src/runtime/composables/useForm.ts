@@ -1,10 +1,19 @@
 import type { HTTPMethod } from 'h3'
-import { reactive, ref, toRefs } from 'vue'
+import { reactive, ref, toRefs, watch } from 'vue'
 
 interface FormOptions<T> {
   onSuccess?: (data: T) => void
   onError?: (error: unknown) => void
   onFinish?: () => void
+  headers?: Record<string, string>
+  requestOptions?: {
+    withCredentials?: boolean
+    timeout?: number
+    [key: string]: unknown
+  }
+  fetchOptions?: {
+    [key: string]: unknown
+  }
 }
 
 interface ValidationError {
@@ -18,7 +27,7 @@ export const useForm = <T extends Record<string, unknown>>(_data: T) => {
   const errors = reactive<Record<string, string>>({})
   const processing = ref(false)
   const success = ref(false)
-  const progress = ref(null)
+  const progress = ref<number | null>(null)
 
   const setError = (field: keyof T, message: string) => {
     errors[field as string] = message
@@ -32,11 +41,23 @@ export const useForm = <T extends Record<string, unknown>>(_data: T) => {
 
   const reset = (...fields: (keyof T)[]) => {
     if (fields.length === 0) {
-      Object.assign(data.value, originalData)
+      Object.keys(originalData).forEach((key) => {
+        if (data.value[key] instanceof File || data.value[key] instanceof Blob) {
+          data.value[key] = null
+        }
+        else {
+          data.value[key] = originalData[key]
+        }
+      })
     }
     else {
       fields.forEach((field) => {
-        data.value[field] = originalData[field]
+        if (data.value[field] instanceof File || data.value[field] instanceof Blob) {
+          data.value[field] = null
+        }
+        else {
+          data.value[field] = originalData[field]
+        }
       })
     }
   }
@@ -49,10 +70,26 @@ export const useForm = <T extends Record<string, unknown>>(_data: T) => {
     })
   }
 
-  const hasFile = ref(false)
+  function hasFiles(data: any): boolean {
+    if (data instanceof File || data instanceof Blob) {
+      return true
+    }
+
+    if (Array.isArray(data)) {
+      return data.some(value => hasFiles(value))
+    }
+
+    if (typeof data === 'object' && data !== null) {
+      return Object.values(data).some(value => hasFiles(value))
+    }
+
+    return false
+  }
+  const hasFile = ref(hasFiles(data.value))
+
   watch(
-    data,
-    (newValue) => {
+    data.value,
+    (newValue: T) => {
       hasFile.value = Object.keys(newValue).some(
         key => newValue[key] instanceof File || newValue[key] instanceof Blob,
       )
@@ -60,30 +97,46 @@ export const useForm = <T extends Record<string, unknown>>(_data: T) => {
     { deep: true },
   )
 
-  const appendFormData = (dataToAppend) => {
-    Object.keys(data.value).forEach((key) => {
-      const value = data.value[key]
-      if (value instanceof File || value instanceof Blob) {
-        (dataToAppend as FormData).append(key, value)
-      }
-      else {
-        (dataToAppend as FormData).append(key, String(value))
-      }
-    })
+  const appendFormData = (formData: FormData) => {
+    objectToFormData(formData, data.value)
   }
 
-  const submit = async (method: HTTPMethod, url: string, options: FormOptions<T>) => {
+  function objectToFormData(formData: FormData, data: T, parentKey?: string) {
+    if (data instanceof File || data instanceof Blob) {
+      if (parentKey) {
+        formData.append(parentKey, data)
+      }
+    }
+    else if (Array.isArray(data)) {
+      data.forEach((value, index) => {
+        const key = parentKey ? `${parentKey}[${index}]` : `${index}`
+        objectToFormData(formData, value, key)
+      })
+    }
+    else if (typeof data === 'object' && data !== null) {
+      Object.keys(data).forEach((key) => {
+        const value = data[key]
+        const formKey = parentKey ? `${parentKey}[${key}]` : key
+        objectToFormData(formData, value, formKey)
+      })
+    }
+    else if (data !== null && data !== undefined) {
+      if (parentKey) {
+        formData.append(parentKey, String(data))
+      }
+    }
+  }
+
+  const submitFetch = async (method: HTTPMethod, url: string, options: FormOptions<T>) => {
     try {
-      const requestData = hasFile.value ? new FormData() : data.value
-      console.log('hasFile', hasFile.value)
-      if (hasFile.value) appendFormData(requestData)
-      console.log('Submitting data:', requestData)
+      const requestData = data.value
       resetErrors()
       processing.value = true
       const res = await $fetch(url, {
         method,
         body: method !== 'GET' ? requestData : undefined,
         params: method === 'GET' ? requestData : undefined,
+        ...options.fetchOptions,
       })
       processing.value = false
       options.onSuccess?.(res as T)
@@ -104,7 +157,126 @@ export const useForm = <T extends Record<string, unknown>>(_data: T) => {
     }
   }
 
-  const get = (url: string, options?: FormOptions<T> | null | undefined) => submit('GET', url, options || {})
+  const submitXhr = (method: HTTPMethod, url: string, options: FormOptions<T>) => {
+    try {
+      resetErrors()
+      processing.value = true
+      progress.value = 0
+
+      const requestData = new FormData()
+      appendFormData(requestData)
+
+      let requestUrl = url
+      if (method === 'GET' || method === 'DELETE') {
+        const queryParams = new URLSearchParams()
+        requestData.forEach((value, key) => {
+          queryParams.append(key, value.toString())
+        })
+        requestUrl += '?' + queryParams.toString()
+      }
+
+      const xhr = new XMLHttpRequest()
+
+      xhr.open(method, requestUrl, true)
+
+      if (options.requestOptions) {
+        for (const [key, value] of Object.entries(options.requestOptions)) {
+          if (key in xhr && typeof xhr[key as keyof XMLHttpRequest] !== 'function') {
+            xhr[key as keyof XMLHttpRequest] = value
+          }
+        }
+      }
+
+      if (options.headers) {
+        for (const [key, value] of Object.entries(options.headers)) {
+          xhr.setRequestHeader(key, value)
+        }
+      }
+
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          progress.value = Math.round((event.loaded / event.total) * 100)
+        }
+      }
+
+      xhr.onload = () => {
+        progress.value = null
+
+        let responseData
+        try {
+          responseData = JSON.parse(xhr.responseText)
+        }
+        catch (e) {
+          responseData = xhr.responseText
+        }
+
+        if (xhr.status >= 200 && xhr.status < 300) {
+          options.onSuccess?.(responseData as T)
+          success.value = true
+        }
+        else {
+          if (xhr.status === 422 && responseData?.data?.errors) {
+            handleValidationErrors(responseData.data.errors)
+          }
+          options.onError?.(responseData)
+        }
+      }
+
+      xhr.onloadend = () => {
+        processing.value = false
+        options.onFinish?.()
+      }
+
+      xhr.onerror = () => {
+        processing.value = false
+        progress.value = null
+
+        let responseData
+        try {
+          responseData = JSON.parse(xhr.responseText)
+        }
+        catch (e) {
+          responseData = xhr.responseText
+        }
+
+        options.onError?.(responseData)
+        options.onFinish?.()
+      }
+
+      xhr.onabort = () => {
+        processing.value = false
+        progress.value = null
+        options.onFinish?.()
+      }
+
+      xhr.ontimeout = () => {
+        processing.value = false
+        progress.value = null
+        options.onError?.(new Error('Request timed out'))
+        options.onFinish?.()
+      }
+
+      if (method === 'GET' || method === 'DELETE') {
+        xhr.send()
+      }
+      else {
+        xhr.send(requestData)
+      }
+    }
+    catch (err: any) {
+      processing.value = false
+      progress.value = null
+      options.onError?.(err)
+      options.onFinish?.()
+    }
+  }
+
+  const submit = (method: HTTPMethod, url: string, options: FormOptions<T>) => {
+    const requestHandler = hasFile.value ? submitXhr : submitFetch
+    return requestHandler(method, url, options)
+  }
+
+  const get = (url: string, options?: FormOptions<T>) => submit('GET', url, options || {})
   const post = (url: string, options?: FormOptions<T>) => submit('POST', url, options || {})
   const put = (url: string, options?: FormOptions<T>) => submit('PUT', url, options || {})
   const patch = (url: string, options?: FormOptions<T>) => submit('PATCH', url, options || {})

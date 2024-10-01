@@ -1,30 +1,33 @@
-/**
- * TODO: need to keep the filename somewhere, like avatar:
- *            { filename 'louis.png', content: Buffer or String }
- */
+import type { H3Event, InferEventInput, MultiPartData, ValidateFunction, ValidateResult } from 'h3'
+import { readValidatedBody, readMultipartFormData, getHeader } from 'h3'
+
+import { createValidationError } from './validation'
 
 export async function readValidatedFormData<
   T,
   Event extends H3Event = H3Event,
-  _T = InferEventInput<'formData', Event, T>,
->(event: Event, validate: ValidateFunction<_T>): Promise<_T> {
-  // Read the data
+  _T = InferEventInput<'body', Event, T>,
+>(event: Event, validate: ValidateFunction<_T>): Promise<boolean | _T | ValidateResult<_T>> {
+  const contentType = getHeader(event, 'content-type')
+
+  if (!contentType?.includes('multipart/form-data')) {
+    return await readValidatedBody(event, validate)
+  }
   const formData = await readMultipartFormData(event)
   if (!formData) {
     throw createValidationError('No form data received')
   }
-  // Convert form data in object
-  const formDataObj: Record<string, never> = {}
+
+  const formDataObj = formatFormData(formData)
+  return validate(formDataObj)
+}
+
+const formatFormData = (formData: MultiPartData[]) => {
+  const formDataObj: Record<string, unknown> = {}
   formData.forEach((field) => {
     if (field.name) {
       formDataObj[field.name] = field.type === 'file' ? field : field.data.toString()
     }
   })
-
-  // Validate the data
-  const validated = validate(formDataObj)
-
-  return validated.success
-    ? { success: true, data: formData }
-    : { success: false, error: validated.error }
+  return formDataObj
 }
