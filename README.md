@@ -89,6 +89,10 @@ const submit = async () => {
 </script>
 ```
 
+### Handling Files
+
+
+
 This setup provides a seamless integration between frontend form handling and backend validation, similar to the functionality offered by Inertia.js and Vue's useForm, but tailored for Nuxt applications.
 
 ## Todo
