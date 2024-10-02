@@ -91,6 +91,54 @@ const submit = async () => {
 
 This setup provides a seamless integration between frontend form handling and backend validation, similar to the functionality offered by Inertia.js and Vue's useForm, but tailored for Nuxt applications.
 
+## File Uploads
+
+Nuxt Form also supports file uploads in a simple and efficient way. You can manage file uploads alongside your form data, and it even provides upload progress tracking.
+
+### Example of File Upload
+
+In the example below, you can see how to add a file upload input to your form. The file selected will be sent with the rest of the form data when submitted.
+
+```vue
+<template>
+  <form @submit.prevent="submit">
+    <input
+      type="file"
+      @change="form.avatar = $event.target.files[0]"
+    >
+    <progress
+      v-if="form.progress"
+      :value="form.progress"
+      max="100"
+    >
+      {{ form.progress.percentage }}%
+    </progress>
+
+    <button
+      type="submit"
+      :disabled="form.processing"
+    >
+      Submit
+    </button>
+  </form>
+</template>
+
+<script setup>
+const form = useForm({
+  avatar: null | File,
+})
+
+const submit = () => {
+  form.post('/api/endpoint')
+}
+</script>
+```
+
+### Key Features of File Handling:
+
+- Automatically manage file uploads with the form data.
+- Track upload progress with a visual progress bar.
+
 ## Todo
 
 - [X] Handle file uploads

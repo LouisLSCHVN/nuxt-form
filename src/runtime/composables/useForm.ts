@@ -138,6 +138,7 @@ export const useForm = <T extends Record<string, unknown>>(_data: T) => {
       options.onSuccess?.(res as T)
       success.value = true
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     catch (err: any) {
       const validationErrors = err.data?.data?.errors
       processing.value = false
