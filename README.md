@@ -93,8 +93,8 @@ This setup provides a seamless integration between frontend form handling and ba
 
 ## Todo
 
-- [ ] Handle file uploads
-- [ ] Make success state natively available in the composable
+- [X] Handle file uploads
+- [X] Make success state natively available in the composable
 
 ## Contribution
 
