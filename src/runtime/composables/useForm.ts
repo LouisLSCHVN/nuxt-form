@@ -70,7 +70,7 @@ export const useForm = <T extends Record<string, unknown>>(_data: T) => {
     })
   }
 
-  function hasFiles(data: any): boolean {
+  function hasFiles(data: T): boolean {
     if (data instanceof File || data instanceof Blob) {
       return true
     }
@@ -80,7 +80,7 @@ export const useForm = <T extends Record<string, unknown>>(_data: T) => {
     }
 
     if (typeof data === 'object' && data !== null) {
-      return Object.values(data).some(value => hasFiles(value))
+      return Object.values(data).some(value => hasFiles(value as unknown as T))
     }
 
     return false
@@ -89,11 +89,7 @@ export const useForm = <T extends Record<string, unknown>>(_data: T) => {
 
   watch(
     data.value,
-    (newValue: T) => {
-      hasFile.value = Object.keys(newValue).some(
-        key => newValue[key] instanceof File || newValue[key] instanceof Blob,
-      )
-    },
+    (newValue: T) => { hasFile.value = hasFiles(newValue) },
     { deep: true },
   )
 
@@ -117,7 +113,7 @@ export const useForm = <T extends Record<string, unknown>>(_data: T) => {
       Object.keys(data).forEach((key) => {
         const value = data[key]
         const formKey = parentKey ? `${parentKey}[${key}]` : key
-        objectToFormData(formData, value, formKey)
+        objectToFormData(formData, value as unknown as T, formKey)
       })
     }
     else if (data !== null && data !== undefined) {
@@ -142,7 +138,6 @@ export const useForm = <T extends Record<string, unknown>>(_data: T) => {
       options.onSuccess?.(res as T)
       success.value = true
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     catch (err: any) {
       const validationErrors = err.data?.data?.errors
       processing.value = false
@@ -207,6 +202,7 @@ export const useForm = <T extends Record<string, unknown>>(_data: T) => {
           responseData = JSON.parse(xhr.responseText)
         }
         catch (e) {
+          console.error(e)
           responseData = xhr.responseText
         }
 
@@ -236,6 +232,7 @@ export const useForm = <T extends Record<string, unknown>>(_data: T) => {
           responseData = JSON.parse(xhr.responseText)
         }
         catch (e) {
+          console.error(e)
           responseData = xhr.responseText
         }
 
@@ -263,7 +260,7 @@ export const useForm = <T extends Record<string, unknown>>(_data: T) => {
         xhr.send(requestData)
       }
     }
-    catch (err: any) {
+    catch (err: unknown) {
       processing.value = false
       progress.value = null
       options.onError?.(err)
